@@ -23,8 +23,8 @@ const ADMIN_TOKEN = process.env.API_KEY;
  * @returns {string} - 格式 'YYYY/MM/DD HH:mm'，例如 '2024/01/01 08:00'
  */
 function formatOrderDate(timestamp) {
-  // 請實作此函式
-  // 提示：dayjs.unix(timestamp).format('YYYY/MM/DD HH:mm')
+
+  return dayjs.unix(timestamp).format('YYYY/MM/DD HH:mm');
 }
 
 /**
@@ -33,11 +33,25 @@ function formatOrderDate(timestamp) {
  * @returns {string} - 例如 '3 天前' 或 '今天'
  */
 function getDaysAgo(timestamp) {
-  // 請實作此函式
-  // 提示：
+
   // 1. 用 dayjs() 取得今天
+  const currDate = dayjs();
+  //console.log(currDate.format('YYYY/MM/DD'));
+
   // 2. 用 dayjs.unix(timestamp) 取得訂單日期
+  const orderDate = dayjs.unix(timestamp);
+  //console.log(orderDate.format('YYYY/MM/DD'));
+  
   // 3. 用 .diff() 計算天數差異
+  const diffDays = currDate.diff(orderDate, 'day');
+
+  //輸入的日期大於今天，回傳錯誤
+  if( diffDays < 0 )
+  {
+    return `日期錯誤：訂單日期${orderDate} > 現在日期${currDate}`;
+  }
+  
+  return (diffDays === 0 )? `今天`:`${diffDays}天前`;
 }
 
 /**
@@ -46,7 +60,22 @@ function getDaysAgo(timestamp) {
  * @returns {boolean} - 超過 7 天回傳 true
  */
 function isOrderOverdue(timestamp) {
-  // 請實作此函式
+
+  // 1. 用 dayjs() 取得今天
+  const currDate = dayjs();
+
+  // 2. 用 dayjs.unix(timestamp) 取得訂單日期
+  const orderDate = dayjs.unix(timestamp);   
+
+  // 3. 用 .diff() 計算天數差異
+  const diffDays = currDate.diff(orderDate, 'day');
+
+  //輸入的日期大於今天，回傳false，不催付款
+  if( diffDays < 0 )
+  {
+      return false;
+  }
+  return  ( diffDays > 7 )
 }
 
 /**
@@ -55,11 +84,16 @@ function isOrderOverdue(timestamp) {
  * @returns {Array} - 篩選出 createdAt 在本週的訂單
  */
 function getThisWeekOrders(orders) {
-  // 請實作此函式
-  // 提示：
+
   // 1. 用 dayjs().startOf('week') 取得本週開始
+  const startWeekDay = dayjs().startOf('week');
+  
   // 2. 用 dayjs().endOf('week') 取得本週結束
+  const endWeekDay   = dayjs().endOf('week');
+
   // 3. 用 .isBefore() 和 .isAfter() 判斷
+  return orders.filter( item => dayjs.unix(item.createdAt).isAfter(startWeekDay)&&
+                                dayjs.unix(item.createdAt).isBefore(endWeekDay) )
 }
 
 // ========================================

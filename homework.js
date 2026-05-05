@@ -4,13 +4,13 @@
 // ========================================
 
 // 載入環境變數與套件
-require('dotenv').config({ path: '.env' });
-const dayjs = require('dayjs');
-const axios = require('axios');
+require("dotenv").config({ path: ".env" });
+const dayjs = require("dayjs");
+const axios = require("axios");
 
 // API 設定（從 .env 讀取）
 const API_PATH = process.env.API_PATH;
-const BASE_URL = 'https://livejs-api.hexschool.io';
+const BASE_URL = "https://livejs-api.hexschool.io";
 const ADMIN_TOKEN = process.env.API_KEY;
 
 // ========================================
@@ -23,8 +23,7 @@ const ADMIN_TOKEN = process.env.API_KEY;
  * @returns {string} - 格式 'YYYY/MM/DD HH:mm'，例如 '2024/01/01 08:00'
  */
 function formatOrderDate(timestamp) {
-
-  return dayjs.unix(timestamp).format('YYYY/MM/DD HH:mm');
+  return dayjs.unix(timestamp).format("YYYY/MM/DD HH:mm");
 }
 
 /**
@@ -33,7 +32,6 @@ function formatOrderDate(timestamp) {
  * @returns {string} - 例如 '3 天前' 或 '今天'
  */
 function getDaysAgo(timestamp) {
-
   // 1. 用 dayjs() 取得今天
   const currDate = dayjs();
   //console.log(currDate.format('YYYY/MM/DD'));
@@ -41,17 +39,16 @@ function getDaysAgo(timestamp) {
   // 2. 用 dayjs.unix(timestamp) 取得訂單日期
   const orderDate = dayjs.unix(timestamp);
   //console.log(orderDate.format('YYYY/MM/DD'));
-  
+
   // 3. 用 .diff() 計算天數差異
-  const diffDays = currDate.diff(orderDate, 'day');
+  const diffDays = currDate.diff(orderDate, "day");
 
   //輸入的日期大於今天，回傳錯誤
-  if( diffDays < 0 )
-  {
+  if (diffDays < 0) {
     return `日期錯誤：訂單日期${orderDate} > 現在日期${currDate}`;
   }
-  
-  return (diffDays === 0 )? `今天`:`${diffDays}天前`;
+
+  return diffDays === 0 ? `今天` : `${diffDays}天前`;
 }
 
 /**
@@ -60,22 +57,20 @@ function getDaysAgo(timestamp) {
  * @returns {boolean} - 超過 7 天回傳 true
  */
 function isOrderOverdue(timestamp) {
-
   // 1. 用 dayjs() 取得今天
   const currDate = dayjs();
 
   // 2. 用 dayjs.unix(timestamp) 取得訂單日期
-  const orderDate = dayjs.unix(timestamp);   
+  const orderDate = dayjs.unix(timestamp);
 
   // 3. 用 .diff() 計算天數差異
-  const diffDays = currDate.diff(orderDate, 'day');
+  const diffDays = currDate.diff(orderDate, "day");
 
   //輸入的日期大於今天，回傳false，不催付款
-  if( diffDays < 0 )
-  {
-      return false;
+  if (diffDays < 0) {
+    return false;
   }
-  return  ( diffDays > 7 )
+  return diffDays > 7;
 }
 
 /**
@@ -84,16 +79,18 @@ function isOrderOverdue(timestamp) {
  * @returns {Array} - 篩選出 createdAt 在本週的訂單
  */
 function getThisWeekOrders(orders) {
-
   // 1. 用 dayjs().startOf('week') 取得本週開始
-  const startWeekDay = dayjs().startOf('week');
-  
+  const startWeekDay = dayjs().startOf("week");
+
   // 2. 用 dayjs().endOf('week') 取得本週結束
-  const endWeekDay   = dayjs().endOf('week');
+  const endWeekDay = dayjs().endOf("week");
 
   // 3. 用 .isBefore() 和 .isAfter() 判斷
-  return orders.filter( item => dayjs.unix(item.createdAt).isAfter(startWeekDay)&&
-                                dayjs.unix(item.createdAt).isBefore(endWeekDay) )
+  return orders.filter(
+    (item) =>
+      dayjs.unix(item.createdAt).isAfter(startWeekDay) &&
+      dayjs.unix(item.createdAt).isBefore(endWeekDay)
+  );
 }
 
 // ========================================
@@ -113,7 +110,25 @@ function getThisWeekOrders(orders) {
  * - payment: 必須是 'ATM', 'Credit Card', 'Apple Pay' 其中之一
  */
 function validateOrderUser(data) {
-  // 請實作此函式
+  const payOpt = ["ATM", "Credit Card", "Apple Pay"];
+  const errors = [];
+
+  if (!data.name || data.name.trim() === "") {
+    errors.push("name 不可為空");
+  }
+  if (!/^09\d{8}$/.test(data.tel)) {
+    errors.push("tel 必須是 09 開頭的 10 位數字");
+  }
+  if (!data.email || !data.email.includes("@")) {
+    errors.push("Email 格式不正確");
+  }
+  if (!data.address || data.address.trim() === "") {
+    errors.push("address: 不可為空");
+  }
+  if (!data.payment || !payOpt.includes(data.payment)) {
+    errors.push("payment 必須是 'ATM', 'Credit Card', 'Apple Pay' 其中之一");
+  }
+  return { isValid: errors.length === 0, errors };
 }
 
 /**
@@ -127,7 +142,17 @@ function validateOrderUser(data) {
  * - 不可大於 99
  */
 function validateCartQuantity(quantity) {
-  // 請實作此函式
+  const errors = [];
+  if (!Number.isInteger(quantity)) {
+    errors.push("必須是正整數");
+  }
+  if (quantity < 1) {
+    errors.push("不可小於 1");
+  }
+  if (quantity > 99) {
+    errors.push("不可大於 99");
+  }
+  return { isValid: errors.length === 0, errors };
 }
 
 // ========================================
@@ -250,7 +275,7 @@ const OrderService = {
     const orders = await this.fetchOrders();
     const unpaid = this.filterUnpaidOrders(orders);
     return this.formatOrders(unpaid);
-  }
+  },
 };
 
 // ========================================
@@ -271,7 +296,7 @@ module.exports = {
   getProductsWithAxios,
   addToCartWithAxios,
   getOrdersWithAxios,
-  OrderService
+  OrderService,
 };
 
 // ========================================
@@ -280,67 +305,82 @@ module.exports = {
 if (require.main === module) {
   // 測試資料
   const testOrders = [
-    { id: 'order-1', createdAt: Math.floor(Date.now() / 1000) - 86400 * 3, paid: false },
-    { id: 'order-2', createdAt: Math.floor(Date.now() / 1000) - 86400 * 10, paid: true },
-    { id: 'order-3', createdAt: Math.floor(Date.now() / 1000), paid: false }
+    {
+      id: "order-1",
+      createdAt: Math.floor(Date.now() / 1000) - 86400 * 3,
+      paid: false,
+    },
+    {
+      id: "order-2",
+      createdAt: Math.floor(Date.now() / 1000) - 86400 * 10,
+      paid: true,
+    },
+    { id: "order-3", createdAt: Math.floor(Date.now() / 1000), paid: false },
   ];
 
   async function runTests() {
-    console.log('=== 第七週作業測試 ===\n');
-    console.log('API_PATH:', API_PATH);
-    console.log('');
+    console.log("=== 第七週作業測試 ===\n");
+    console.log("API_PATH:", API_PATH);
+    console.log("");
 
     // 任務一測試
-    console.log('--- 任務一：dayjs 日期處理 ---');
+    console.log("--- 任務一：dayjs 日期處理 ---");
     const timestamp = 1704067200;
-    console.log('formatOrderDate:', formatOrderDate(timestamp));
-    console.log('getDaysAgo:', getDaysAgo(testOrders[0].createdAt));
-    console.log('isOrderOverdue:', isOrderOverdue(testOrders[1].createdAt));
-    console.log('getThisWeekOrders:', getThisWeekOrders(testOrders)?.length, '筆');
+    console.log("formatOrderDate:", formatOrderDate(timestamp));
+    console.log("getDaysAgo:", getDaysAgo(testOrders[0].createdAt));
+    console.log("isOrderOverdue:", isOrderOverdue(testOrders[1].createdAt));
+    console.log(
+      "getThisWeekOrders:",
+      getThisWeekOrders(testOrders)?.length,
+      "筆"
+    );
 
     // 任務二測試
-    console.log('\n--- 任務二：資料驗證 ---');
+    console.log("\n--- 任務二：資料驗證 ---");
     const validUser = {
-      name: '王小明',
-      tel: '0912345678',
-      email: 'test@example.com',
-      address: '台北市信義區',
-      payment: 'Credit Card'
+      name: "王小明",
+      tel: "0912345678",
+      email: "test@example.com",
+      address: "台北市信義區",
+      payment: "Credit Card",
     };
-    console.log('validateOrderUser (valid):', validateOrderUser(validUser));
+    console.log("validateOrderUser (valid):", validateOrderUser(validUser));
 
     const invalidUser = {
-      name: '',
-      tel: '1234',
-      email: 'invalid',
-      address: '',
-      payment: 'Bitcoin'
+      name: "",
+      tel: "1234",
+      email: "invalid",
+      address: "",
+      payment: "Bitcoin",
     };
-    console.log('validateOrderUser (invalid):', validateOrderUser(invalidUser));
+    console.log("validateOrderUser (invalid):", validateOrderUser(invalidUser));
 
-    console.log('validateCartQuantity (5):', validateCartQuantity(5));
-    console.log('validateCartQuantity (0):', validateCartQuantity(0));
+    console.log("validateCartQuantity (5):", validateCartQuantity(5));
+    console.log("validateCartQuantity (0):", validateCartQuantity(0));
 
     // 任務三測試
-    console.log('\n--- 任務三：ID 產生 ---');
-    console.log('generateOrderId:', generateOrderId());
-    console.log('generateCartItemId:', generateCartItemId());
+    console.log("\n--- 任務三：ID 產生 ---");
+    console.log("generateOrderId:", generateOrderId());
+    console.log("generateCartItemId:", generateCartItemId());
 
     // 任務四測試
     if (API_PATH) {
-      console.log('\n--- 任務四：Axios API 串接 ---');
+      console.log("\n--- 任務四：Axios API 串接 ---");
       try {
         const products = await getProductsWithAxios();
-        console.log('getProductsWithAxios:', products ? `成功取得 ${products.length} 筆產品` : '回傳 undefined');
+        console.log(
+          "getProductsWithAxios:",
+          products ? `成功取得 ${products.length} 筆產品` : "回傳 undefined"
+        );
       } catch (error) {
-        console.log('getProductsWithAxios 錯誤:', error.message);
+        console.log("getProductsWithAxios 錯誤:", error.message);
       }
     } else {
-      console.log('\n--- 任務四：請先在 .env 設定 API_PATH ---');
+      console.log("\n--- 任務四：請先在 .env 設定 API_PATH ---");
     }
 
-    console.log('\n=== 測試結束 ===');
-    console.log('\n提示：執行 node test.js 進行完整驗證');
+    console.log("\n=== 測試結束 ===");
+    console.log("\n提示：執行 node test.js 進行完整驗證");
   }
 
   runTests();

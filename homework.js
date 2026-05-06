@@ -192,11 +192,15 @@ async function getProductsWithAxios() {
   //console.log(`=== getProductsWithAxios ===`)
 
   // 提示：axios.get() 會自動解析 JSON，不需要 .json()
-  const apiUrl = `${BASE_URL}/api/livejs/v1/customer/${API_PATH}/products`;
-  //console.log(`apiUrl ==> ${apiUrl}`)
-
-  const response = await axios.get(apiUrl);
-  return response.data.products;
+  try {
+    const apiUrl = `${BASE_URL}/api/livejs/v1/customer/${API_PATH}/products`;
+    //console.log(`apiUrl ==> ${apiUrl}`)
+    const response = await axios.get(apiUrl);
+    return response.data.products;
+  } catch (error) {
+    console.log(`getProductsWithAxios error：${error.message}`);
+    return [];
+  }
 }
 
 /**
@@ -207,15 +211,34 @@ async function getProductsWithAxios() {
  */
 async function addToCartWithAxios(productId, quantity) {
   //console.log(`=== addToCartWithAxios ===`)
+  try {
+    const validation = validateCartQuantity(quantity);
+    if (!validation.isValid) {
+      return {
+        status: false,
+        message: `數量輸入錯誤：${validation.errors.join(", ")}`,
+        carts: [],
+        total: 0,
+        finalTotal: 0,
+      };
+    }
+    const apiUrl = `${BASE_URL}/api/livejs/v1/customer/${API_PATH}/carts`;
+    //console.log(`apiUrl ==> ${apiUrl}`);
 
-  const apiUrl = `${BASE_URL}/api/livejs/v1/customer/${API_PATH}/carts`;
-  //console.log(`apiUrl ==> ${apiUrl}`);
+    const data = { data: { productId: productId, quantity: quantity } };
+    const response = await axios.post(apiUrl, data);
 
-  // 提示：axios.post(url, data) 會自動設定 Content-Type
-  const data = { data: { productId: productId, quantity: quantity } };
-  const response = await axios.post(apiUrl, data);
-
-  return response.data;
+    return response.data;
+  } catch (error) {
+    // 根據API文件與函式要求，回傳空的購物車資料，但註明狀態有錯
+    return {
+      status: false,
+      message: error.message,
+      carts: [],
+      total: 0,
+      finalTotal: 0,
+    };
+  }
 }
 
 /**
@@ -224,16 +247,20 @@ async function addToCartWithAxios(productId, quantity) {
  */
 async function getOrdersWithAxios() {
   //console.log(`=== getOrdersWithAxios ===`)
+  try {
+    const apiUrl = `${BASE_URL}/api/livejs/v1/admin/${API_PATH}/orders`;
+    //console.log(`apiUrl ==> ${apiUrl}`)
 
-  const apiUrl = `${BASE_URL}/api/livejs/v1/admin/${API_PATH}/orders`;
-  //console.log(`apiUrl ==> ${apiUrl}`)
+    // 提示：axios.get(url, { headers: { authorization: token } })
+    const response = await axios.get(apiUrl, {
+      headers: { authorization: ADMIN_TOKEN },
+    });
 
-  // 提示：axios.get(url, { headers: { authorization: token } })
-  const response = await axios.get(apiUrl, {
-    headers: { authorization: ADMIN_TOKEN },
-  });
-
-  return response.data.orders;
+    return response.data.orders;
+  } catch (error) {
+    console.log(`getOrdersWithAxios error：${error.message}`);
+    return [];
+  }
 }
 
 /*
@@ -270,15 +297,20 @@ const OrderService = {
    * @returns {Promise<Array>} - 訂單陣列
    */
   async fetchOrders() {
-    //console.log(`=== OrderService.fetchOrders ===`)
-    const apiUrl = `${this.baseURL}/api/livejs/v1/admin/${this.apiPath}/orders`;
-    //console.log(`apiUrl ==> ${apiUrl}`);
+    try {
+      //console.log(`=== OrderService.fetchOrders ===`)
+      const apiUrl = `${this.baseURL}/api/livejs/v1/admin/${this.apiPath}/orders`;
+      //console.log(`apiUrl ==> ${apiUrl}`);
 
-    const response = await axios.get(apiUrl, {
-      headers: { authorization: this.token },
-    });
+      const response = await axios.get(apiUrl, {
+        headers: { authorization: this.token },
+      });
 
-    return response.data.orders;
+      return response.data.orders;
+    } catch (error) {
+      console.log(`fetchOrders error：${error.message}`);
+      return [];
+    }
   },
 
   /**
@@ -287,6 +319,9 @@ const OrderService = {
    * @returns {Array} - 為每筆訂單加上 formattedDate 欄位
    */
   formatOrders(orders) {
+    if (!orders) {
+      return [];
+    }
     return orders.map((order) => ({
       ...order,
       formattedDate: formatOrderDate(order.createdAt),
@@ -299,6 +334,9 @@ const OrderService = {
    * @returns {Array} - paid: false 的訂單
    */
   filterUnpaidOrders(orders) {
+    if (!orders) {
+      return [];
+    }    
     return orders.filter((order) => order.paid === false);
   },
 

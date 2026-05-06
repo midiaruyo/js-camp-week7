@@ -263,7 +263,15 @@ const OrderService = {
    * @returns {Promise<Array>} - 訂單陣列
    */
   async fetchOrders() {
-    // 請實作此函式
+    //console.log(`=== OrderService.fetchOrders ===`)
+    const apiUrl = `${this.baseURL}/api/livejs/v1/admin/${this.apiPath}/orders`;
+    //console.log(`apiUrl ==> ${apiUrl}`);
+
+    const response = await axios.get(apiUrl, {
+      headers: { authorization: this.token },
+    });
+
+    return response.data.orders;
   },
 
   /**
@@ -272,7 +280,10 @@ const OrderService = {
    * @returns {Array} - 為每筆訂單加上 formattedDate 欄位
    */
   formatOrders(orders) {
-    // 請實作此函式
+    return orders.map((order) => ({
+      ...order,
+      formattedDate: formatOrderDate(order.createdAt),
+    }));
   },
 
   /**
@@ -281,7 +292,7 @@ const OrderService = {
    * @returns {Array} - paid: false 的訂單
    */
   filterUnpaidOrders(orders) {
-    // 請實作此函式
+    return orders.filter((order) => order.paid === false);
   },
 
   /**

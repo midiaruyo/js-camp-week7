@@ -166,7 +166,7 @@ function validateCartQuantity(quantity) {
 function generateOrderId() {
   //console.log(`Date.now().toString(36)= ${Date.now().toString(36)}`);
   //console.log(`Math.random().toString(36).slice(2)= ${Math.random().toString(36).slice(2)}`);
-  return `ORD-${Date.now().toString(36) + Math.random().toString(36).slice(2)}`
+  return `ORD-${Date.now().toString(36) + Math.random().toString(36).slice(2)}`;
 }
 
 /**
@@ -174,24 +174,29 @@ function generateOrderId() {
  * @returns {string} - 格式 'CART-xxxxxxxx'
  */
 function generateCartItemId() {
-  // 請實作此函式
   //console.log(`Date.now().toString(36)= ${Date.now().toString(36)}`);
   //console.log(`Math.random().toString(36).slice(2)= ${Math.random().toString(36).slice(2)}`);
-  return `CART-${Date.now().toString(36) + Math.random().toString(36).slice(2)}`
+  return `CART-${
+    Date.now().toString(36) + Math.random().toString(36).slice(2)
+  }`;
 }
 
 // ========================================
 // 任務四：使用 Axios 串接 API
 // ========================================
-
 /**
  * 1. 取得產品列表（使用 Axios）
  * @returns {Promise<Array>} - 回傳 products 陣列
  */
 async function getProductsWithAxios() {
-  // 請實作此函式
+  //console.log(`=== getProductsWithAxios ===`)
+
   // 提示：axios.get() 會自動解析 JSON，不需要 .json()
-  // 回傳 response.data.products
+  const apiUrl = `${BASE_URL}/api/livejs/v1/customer/${API_PATH}/products`;
+  //console.log(`apiUrl ==> ${apiUrl}`)
+
+  const response = await axios.get(apiUrl);
+  return response.data.products;
 }
 
 /**
@@ -201,8 +206,16 @@ async function getProductsWithAxios() {
  * @returns {Promise<Object>} - 回傳購物車資料
  */
 async function addToCartWithAxios(productId, quantity) {
-  // 請實作此函式
+  //console.log(`=== addToCartWithAxios ===`)
+
+  const apiUrl = `${BASE_URL}/api/livejs/v1/customer/${API_PATH}/carts`;
+  //console.log(`apiUrl ==> ${apiUrl}`);
+
   // 提示：axios.post(url, data) 會自動設定 Content-Type
+  const data = { data: { productId: productId, quantity: quantity } };
+  const response = await axios.post(apiUrl, data);
+
+  return response.data;
 }
 
 /**
@@ -210,8 +223,17 @@ async function addToCartWithAxios(productId, quantity) {
  * @returns {Promise<Array>} - 回傳訂單陣列
  */
 async function getOrdersWithAxios() {
-  // 請實作此函式
+  //console.log(`=== getOrdersWithAxios ===`)
+
+  const apiUrl = `${BASE_URL}/api/livejs/v1/admin/${API_PATH}/orders`;
+  //console.log(`apiUrl ==> ${apiUrl}`)
+
   // 提示：axios.get(url, { headers: { authorization: token } })
+  const response = await axios.get(apiUrl, {
+    headers: { authorization: ADMIN_TOKEN },
+  });
+
+  return response.data.orders;
 }
 
 /*
